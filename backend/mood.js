@@ -3,7 +3,7 @@ function getPetMood(earnedXP, streak) {
     const moodTiers = [
         { mood: "Motivated", condition: Number(streak) >= 7, priority: 100 },
         { mood: "Excited", condition: Number(earnedXP) > 20, priority: 75 },
-        { mood: "Happy", condition: Number(earnedXP) > 0, priority: 50 },
+        { mood: "Happy", condition: Number(earnedXP) > 0 || Number(streak) > 0, priority: 50 },
         { mood: "Sleepy", condition: true, priority: 10 }
     ];
 
@@ -15,7 +15,6 @@ function getPetMood(earnedXP, streak) {
         if (tier.condition && tier.priority > highestPriority) {
             currentMood = tier.mood;
             highestPriority = tier.priority;
-            break;
         }
     }
 
