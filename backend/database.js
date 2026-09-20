@@ -155,13 +155,14 @@ function getDistinctRepos() {
 }
 
 /**
- * Purges repository records during synchronization routines.
+ * Historical activity must never be deleted when a repository is removed,
+ * privatized, or temporarily inaccessible. Keeping the records preserves
+ * earned XP and streak history.
  */
 
 function purgeRepoActivity(repoName) {
-    db.prepare(`
-        DELETE FROM repo_activity WHERE repo_name = ?
-    `).run(repoName);
+    // Intentionally no-op: old repo history is part of the pet's earned XP.
+    return 0;
 }
 
 /**

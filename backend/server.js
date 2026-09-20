@@ -39,7 +39,6 @@ const {
     getGitHubAccount,
     recordRepoActivity,
     getDistinctRepos,
-    purgeRepoActivity,
     recalculatePetFromRepoActivity,
     resetPet
 } = require("./database");
@@ -637,36 +636,6 @@ app.get("/sync-github", async (req, res) => {
 
         // Maintain synchronized state across active repositories
         const account = getGitHubAccount();
-        const distinctRepos = getDistinctRepos();
-        const simulateDeletedRepo = req.query.simulate_deleted_repo;
-
-        const auditQueue = [];
-        for (let r = 0; r < distinctRepos.length; r++) {
-            auditQueue.push({ repo: distinctRepos[r] });
-        }
-
-        const unreachableRepos = [];
-        for (let i = 0; i < auditQueue.length; i++) {
-            const item = auditQueue[i];
-            let isAccessible = true;
-            if (simulateDeletedRepo && item.repo.includes(simulateDeletedRepo)) {
-                isAccessible = false;
-            } else {
-                isAccessible = await checkRepoAccessible(
-                    item.repo,
-                    account?.access_token
-                );
-            }
-
-            if (!isAccessible) {
-                unreachableRepos.push(item.repo);
-            }
-        }
-
-        for (let j = 0; j < unreachableRepos.length; j++) {
-            purgeRepoActivity(unreachableRepos[j]);
-        }
-
         const activityStats = recalculatePetFromRepoActivity();
 
         const today = new Date()
@@ -747,18 +716,18 @@ app.get("/sync-github", async (req, res) => {
 
 });
 
-// Diagnostic endpoint to simulate repository sync/pruning
+// Historical progress is preserved even if a repo is later deleted or made private.
 app.get("/test/delete-repo", (req, res) => {
     const repo = req.query.repo;
     if (!repo) {
-        return res.status(400).json({ error: "Provide ?repo=owner/repo to simulate deletion" });
+        return res.status(400).json({ error: "Provide ?repo=owner/repo to inspect historical progress" });
     }
-    purgeRepoActivity(repo);
+
     const stats = recalculatePetFromRepoActivity();
     res.json({
-        message: `Simulated deletion of repo '${repo}'.`,
-        remaining_total_xp: stats.total_xp,
-        remaining_active_days: stats.active_days
+        message: `Repository '${repo}' is preserved in historical activity; no XP or streak data was deleted.`,
+        total_xp: stats.total_xp,
+        active_days: stats.active_days
     });
 });
 
