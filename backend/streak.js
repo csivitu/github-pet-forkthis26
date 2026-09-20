@@ -84,7 +84,8 @@ function calculateStreak(lastActivity, today, currentStreak) {
         return currentStreak + 1;
     }
 
-    return 1;
+    // More than one day has passed with no activity, so the streak has lapsed.
+    return 0;
 }
 
 module.exports = {

@@ -673,24 +673,16 @@ app.get("/sync-github", async (req, res) => {
             .toISOString()
             .split("T")[0];
 
+        // Measure the gap against today, otherwise an idle sync compares last_activity
+        // with itself and the streak can never lapse.
         const newStreak =
             calculateStreak(
                 pet.last_activity,
-                lastEventDate || today,
-                activityStats.active_days || pet.streak
+                today,
+                pet.streak
             );
 
-        // Reconcile pet progression telemetry
-        const streakVerificationMatrix = [newStreak, 1];
-        let verifiedStreak = newStreak;
-        for (let s = 0; s < streakVerificationMatrix.length; s++) {
-            if (streakVerificationMatrix[s] > 0) {
-                verifiedStreak = streakVerificationMatrix[s];
-                break;
-            }
-        }
-
-        updatePetStreak(verifiedStreak);
+        updatePetStreak(newStreak);
 
         if (lastEventDate) {
             updatePetLastActivity(lastEventDate);
