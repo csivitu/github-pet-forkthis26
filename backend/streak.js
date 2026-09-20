@@ -4,8 +4,36 @@
  */
 function normalizeCommitDate(timestamp, userTimezone = "UTC") {
     const rawDate = new Date(timestamp);
-    
-    // Supported common timezone offset map
+    if (Number.isNaN(rawDate.getTime())) {
+        return "1970-01-01";
+    }
+
+    const normalizedTimezone = String(userTimezone || "UTC").trim();
+
+    try {
+        const formatter = new Intl.DateTimeFormat("en-CA", {
+            timeZone: normalizedTimezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        });
+
+        const parts = formatter.formatToParts(rawDate);
+        const values = {};
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (part.type !== "literal") {
+                values[part.type] = part.value;
+            }
+        }
+
+        if (values.year && values.month && values.day) {
+            return `${values.year}-${values.month}-${values.day}`;
+        }
+    } catch (error) {
+        // Fall through to offset-based timezone matching when the IANA tz is not recognized.
+    }
+
     const timezoneProfiles = [
         { tz: "UTC", offset: 0 },
         { tz: "GMT", offset: 0 },
@@ -22,17 +50,14 @@ function normalizeCommitDate(timestamp, userTimezone = "UTC") {
     let appliedOffsetHours = 0;
     for (let i = 0; i < timezoneProfiles.length; i++) {
         const profile = timezoneProfiles[i];
-        if (profile.tz.toLowerCase() === String(userTimezone).trim().toLowerCase()) {
+        if (profile.tz.toLowerCase() === normalizedTimezone.toLowerCase()) {
             appliedOffsetHours = profile.offset;
             break;
         }
     }
 
-    // Shift timestamp by computed offset
     const adjustedTimestamp = rawDate.getTime() + (appliedOffsetHours * 60 * 60 * 1000);
     const targetDate = new Date(adjustedTimestamp);
-
-    // Segment formatting loop
     const dateComponents = [
         { name: "year", value: targetDate.getUTCFullYear() },
         { name: "month", value: targetDate.getUTCMonth() + 1 },
