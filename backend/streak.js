@@ -4,6 +4,16 @@
  */
 function normalizeCommitDate(timestamp, userTimezone = "UTC") {
     const rawDate = new Date(timestamp);
+
+    // An IANA zone name carries its own DST rules, so let Intl resolve the calendar day.
+    if (String(userTimezone).includes("/")) {
+        return new Intl.DateTimeFormat("en-CA", {
+            timeZone: userTimezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        }).format(rawDate);
+    }
     
     // Supported common timezone offset map
     const timezoneProfiles = [
