@@ -669,14 +669,18 @@ app.get("/sync-github", async (req, res) => {
 
         const activityStats = recalculatePetFromRepoActivity();
 
-        const today = new Date()
-            .toISOString()
-            .split("T")[0];
+        const today = new Date();
+        const todayDate = normalizeCommitDate(
+            today.toISOString(),
+            userTimezone
+        );
+
+        const hasActivityToday = Boolean(lastEventDate && lastEventDate === todayDate);
 
         const newStreak =
             calculateStreak(
                 pet.last_activity,
-                lastEventDate || today,
+                lastEventDate || todayDate,
                 activityStats.active_days || pet.streak
             );
 
@@ -702,7 +706,8 @@ app.get("/sync-github", async (req, res) => {
         const mood =
             getPetMood(
                 earnedXP,
-                newStreak
+                newStreak,
+                hasActivityToday
             );
 
         updatePetMood(mood);
