@@ -579,6 +579,8 @@ app.get("/sync-github", async (req, res) => {
         }
 
         let earnedXP = 0;
+        // XP from events seen for the first time; re-syncing the same events adds nothing.
+        let newlyRecordedXP = 0;
         let lastEventDate = pet.last_activity;
 
         // Deduplication tracker for batch issue transition events
@@ -625,13 +627,17 @@ app.get("/sync-github", async (req, res) => {
 
             // Record activity tagged by repo
             const repoName = event.repo?.name;
+            let isNewEvent = false;
             if (repoName && eventXP > 0) {
-                recordRepoActivity(
+                isNewEvent = recordRepoActivity(
                     repoName,
                     event.id,
                     eventXP,
                     eventDate
                 );
+            }
+            if (isNewEvent) {
+                newlyRecordedXP += aggregateEventXP;
             }
         }
 
@@ -716,7 +722,7 @@ app.get("/sync-github", async (req, res) => {
                 events.length,
 
             earned_xp:
-                earnedXP,
+                newlyRecordedXP,
 
             total_xp:
                 currentPet.xp,

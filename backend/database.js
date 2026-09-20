@@ -34,7 +34,7 @@ db.prepare(`
     CREATE TABLE IF NOT EXISTS repo_activity (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         repo_name TEXT,
-        event_id TEXT,
+        event_id TEXT UNIQUE,
         xp INTEGER DEFAULT 0,
         activity_date TEXT
     )
@@ -141,10 +141,12 @@ function getGitHubAccount() {
 }
 
 function recordRepoActivity(repoName, eventId, xp, activityDate) {
-    db.prepare(`
-        INSERT INTO repo_activity (repo_name, event_id, xp, activity_date)
+    // A GitHub event id is permanent, so an event already recorded is never scored twice.
+    const result = db.prepare(`
+        INSERT OR IGNORE INTO repo_activity (repo_name, event_id, xp, activity_date)
         VALUES (?, ?, ?, ?)
     `).run(repoName, eventId, xp, activityDate);
+    return result.changes > 0;
 }
 
 function getDistinctRepos() {
