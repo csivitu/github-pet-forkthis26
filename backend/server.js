@@ -702,7 +702,8 @@ app.get("/sync-github", async (req, res) => {
         const mood =
             getPetMood(
                 earnedXP,
-                newStreak
+                newStreak,
+                currentPet.last_activity === today
             );
 
         updatePetMood(mood);
