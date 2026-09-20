@@ -663,10 +663,8 @@ app.get("/sync-github", async (req, res) => {
             }
         }
 
-        for (let j = 0; j < unreachableRepos.length; j++) {
-            purgeRepoActivity(unreachableRepos[j]);
-        }
-
+        // XP already earned is permanent. A repo that is now deleted, renamed or private
+        // is only reported, never purged, since purging would recalculate the XP away.
         const activityStats = recalculatePetFromRepoActivity();
 
         const today = new Date()
@@ -753,10 +751,10 @@ app.get("/test/delete-repo", (req, res) => {
     if (!repo) {
         return res.status(400).json({ error: "Provide ?repo=owner/repo to simulate deletion" });
     }
-    purgeRepoActivity(repo);
+    // Simulating a repo disappearing on GitHub must not destroy XP already earned from it.
     const stats = recalculatePetFromRepoActivity();
     res.json({
-        message: `Simulated deletion of repo '${repo}'.`,
+        message: `Simulated deletion of repo '${repo}'. Earned XP is retained.`,
         remaining_total_xp: stats.total_xp,
         remaining_active_days: stats.active_days
     });
