@@ -635,9 +635,11 @@ app.get("/sync-github", async (req, res) => {
 
         updatePetXP(pet.xp + earnedXP);
 
-        const today = new Date()
-            .toISOString()
-            .split("T")[0];
+        // "Today" must be the user's calendar day, the same basis event dates use.
+        const today = normalizeCommitDate(
+            new Date().toISOString(),
+            userTimezone
+        );
 
         const newStreak = calculateStreak(
             pet.last_activity,
